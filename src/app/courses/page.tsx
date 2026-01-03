@@ -1,19 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Filter, Clock, Users, Star, ArrowRight } from "lucide-react";
 import { courses } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
 export default function CoursesPage() {
+    const [allCourses, setAllCourses] = useState<any[]>(courses);
     const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
     const categories = ["All", "Cloud", "DevOps", "Development", "AI", "Security"];
 
+    useEffect(() => {
+        const savedCourses = localStorage.getItem("instructor_courses");
+        if (savedCourses) {
+            try {
+                const parsed = JSON.parse(savedCourses);
+                if (Array.isArray(parsed)) {
+                    // Normalize instructor courses to catalog format
+                    const normalizedValues = parsed.map((c: any) => ({
+                        id: c.id,
+                        title: c.title,
+                        description: c.description || "A comprehensive course designed to master key concepts and practical skills.",
+                        category: c.category || "Development",
+                        image: "https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=2831&auto=format&fit=crop", // Default tech image
+                        duration: "5h 30m", // Default or calculated
+                        level: "Beginner",
+                        rating: c.rating || 4.5,
+                        students: c.students || 0,
+                        instructor: {
+                            name: "Instructor",
+                            role: "Senior Developer",
+                            image: "https://ui-avatars.com/api/?name=Instructor"
+                        },
+                        chapters: 10,
+                        hasLab: false
+                    }));
+
+                    // Merge avoiding duplicates (by ID)
+                    setAllCourses(prev => {
+                        const existingIds = new Set(prev.map(p => p.id));
+                        const uniqueNew = normalizedValues.filter(n => !existingIds.has(n.id));
+                        return [...prev, ...uniqueNew];
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to load instructor courses", e);
+            }
+        }
+    }, []);
+
     const filteredCourses = selectedCategory === "All"
-        ? courses
-        : courses.filter(c => c.category === selectedCategory);
+        ? allCourses
+        : allCourses.filter(c => c.category === selectedCategory);
 
     return (
         <div className="min-h-screen bg-gray-50/50 pb-20">
@@ -45,9 +85,9 @@ export default function CoursesPage() {
 
                     {/* Category Tabs */}
                     <div className="flex items-center gap-2 mt-8 overflow-x-auto pb-2 scrollbar-hide">
-                        {categories.map((cat) => (
+                        {categories.map((cat, i) => (
                             <button
-                                key={cat}
+                                key={i}
                                 onClick={() => setSelectedCategory(cat)}
                                 className={cn(
                                     "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 border",

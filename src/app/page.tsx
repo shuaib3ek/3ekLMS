@@ -11,25 +11,22 @@ export default function Home() {
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white font-bold text-xl">
-              3
-            </div>
-            <span className="font-bold text-xl tracking-tight">3ekLMS</span>
+            <img src="/logo.png" alt="3ekLMS" className="h-8 w-auto" />
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-            <Link href="#" className="hover:text-black transition-colors">Platform</Link>
+            <Link href="/instructor" className="hover:text-black transition-colors">Instructor View</Link>
             <Link href="#" className="hover:text-black transition-colors">Solutions</Link>
             <Link href="#" className="hover:text-black transition-colors">Pricing</Link>
             <Link href="#" className="hover:text-black transition-colors">Resources</Link>
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href="#" className="hidden md:block text-sm font-medium text-gray-600 hover:text-black transition-colors">
+            <Link href="/login" className="hidden md:block text-sm font-medium text-gray-600 hover:text-black transition-colors">
               Log in
             </Link>
-            <Link href="#" className="px-5 py-2.5 bg-black text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-all hover:shadow-lg hover:-translate-y-0.5">
-              Get Started
+            <Link href="/dashboard" className="px-5 py-2.5 bg-black text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-all hover:shadow-lg hover:-translate-y-0.5">
+              Student Demo
             </Link>
           </div>
         </div>

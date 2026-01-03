@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Search } from "lucide-react";
+import Link from "next/link";
 
 export function Header() {
     return (
@@ -25,13 +26,17 @@ export function Header() {
                     <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
                 </button>
 
-                <div className="flex items-center gap-3 pl-6 border-l border-gray-100">
+                <Link href="/profile" className="flex items-center gap-3 pl-6 border-l border-gray-100 hover:opacity-70 transition-opacity">
                     <div className="text-right hidden sm:block">
                         <p className="text-sm font-semibold text-gray-900">Alex Morgan</p>
                         <p className="text-xs text-gray-500">DevOps Engineer</p>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 border-2 border-white shadow-md" />
-                </div>
+                    <img
+                        src="https://ui-avatars.com/api/?name=Alex+Morgan&background=000&color=fff"
+                        alt="Alex Morgan"
+                        className="w-10 h-10 rounded-full border-2 border-white shadow-md object-cover"
+                    />
+                </Link>
             </div>
         </header>
     );

@@ -9,7 +9,8 @@ import {
     Users,
     Settings,
     LogOut,
-    GraduationCap
+    GraduationCap,
+    Presentation
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -33,10 +34,7 @@ export function Sidebar() {
             {/* Logo Area */}
             <div className="h-20 flex items-center px-6 border-b border-gray-100/50">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                        3
-                    </div>
-                    <span className="font-bold text-lg tracking-tight text-gray-900">3ekLMS</span>
+                    <img src="/logo.png" alt="3ekLMS" className="h-8 w-auto" />
                 </div>
             </div>
 
@@ -95,14 +93,37 @@ export function Sidebar() {
                         })}
                     </nav>
                 </div>
+                {/* Role Switcher */}
+                <div>
+                    <nav className="space-y-1">
+                        <Link
+                            href="/instructor"
+                            className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-blue-600 bg-blue-50 rounded-2xl hover:bg-blue-100 transition-all duration-200"
+                        >
+                            <Presentation className="w-5 h-5" />
+                            Instructor Mode
+                        </Link>
+                    </nav>
+                </div>
             </div>
 
             {/* User Profile / Logout */}
             <div className="p-4 border-t border-gray-100">
-                <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-600 rounded-2xl hover:bg-red-50 hover:text-red-600 transition-colors">
+                <Link href="/profile" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors group">
+                    <img
+                        src="https://ui-avatars.com/api/?name=Alex+Morgan&background=000&color=fff"
+                        alt="Alex Morgan"
+                        className="w-10 h-10 rounded-full bg-gray-200"
+                    />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 truncate">Alex Morgan</p>
+                        <p className="text-xs text-gray-500 truncate">Student Account</p>
+                    </div>
+                </Link>
+                <Link href="/login" className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-400 hover:text-red-600 transition-colors">
                     <LogOut className="w-5 h-5" />
                     Sign Out
-                </button>
+                </Link>
             </div>
         </aside>
     );

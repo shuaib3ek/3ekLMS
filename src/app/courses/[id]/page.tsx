@@ -42,7 +42,21 @@ export default function CourseDetailPage(props: PageProps) {
                     <button className="p-2 text-gray-400 hover:text-black transition-colors">
                         <Share2 className="w-5 h-5" />
                     </button>
-                    <button className="px-5 py-2 bg-black text-white text-sm font-bold rounded-full hover:bg-gray-800 transition-all">
+                    <button
+                        onClick={() => {
+                            // Check for existing enrollments
+                            const existing = localStorage.getItem("student_enrollments");
+                            let enrollments: string[] = existing ? JSON.parse(existing) : [];
+
+                            if (!enrollments.includes(course.id)) {
+                                enrollments.push(course.id);
+                                localStorage.setItem("student_enrollments", JSON.stringify(enrollments));
+                            }
+
+                            window.location.href = `/learn/${course.id}`;
+                        }}
+                        className="px-5 py-2 bg-black text-white text-sm font-bold rounded-full hover:bg-gray-800 transition-all"
+                    >
                         Start Learning
                     </button>
                 </div>
