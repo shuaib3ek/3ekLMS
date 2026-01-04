@@ -2,18 +2,11 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-
-interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: "student" | "instructor";
-    avatar?: string;
-}
+import { db, User, Role } from "@/lib/db";
 
 interface AuthContextType {
     user: User | null;
-    login: (email: string, role: "student" | "instructor") => void;
+    login: (email: string, role?: Role) => void;
     logout: () => void;
     isLoading: boolean;
 }
@@ -26,40 +19,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const router = useRouter();
 
     useEffect(() => {
-        // Check for persisted user
-        const storedUser = localStorage.getItem("auth_user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
+        // Initialize DB (seed data if needed)
+        db.init();
+
+        // Check for persisted user session
+        const storedUserId = localStorage.getItem("auth_user_id");
+        if (storedUserId) {
+            const foundUser = db.users.getById(storedUserId);
+            if (foundUser) setUser(foundUser);
         }
         setIsLoading(false);
     }, []);
 
-    const login = (email: string, role: "student" | "instructor") => {
-        // Mock login logic
-        let newUser: User;
+    const login = (email: string, role: Role = 'LEARNER') => {
+        let existingUser = db.users.getByEmail(email);
 
-        if (role === 'instructor') {
-            newUser = {
-                id: "inst_123",
-                name: "Sarah Chen",
-                email: email,
-                role: "instructor",
-                avatar: "https://ui-avatars.com/api/?name=Sarah+Chen&background=000&color=fff"
+        if (!existingUser) {
+            // Auto-signup for demo
+            const newUser: User = {
+                id: crypto.randomUUID(),
+                email,
+                name: email.split('@')[0],
+                role: role,
+                orgId: 'org_default',
+                createdAt: new Date().toISOString(),
+                avatar: `https://ui-avatars.com/api/?name=${email}&background=000&color=fff`
             };
-        } else {
-            newUser = {
-                id: "stu_123",
-                name: "Alex Morgan",
-                email: email,
-                role: "student",
-                avatar: "https://ui-avatars.com/api/?name=Alex+Morgan&background=000&color=fff"
-            };
+            db.users.create(newUser);
+            existingUser = newUser;
         }
 
-        setUser(newUser);
-        localStorage.setItem("auth_user", JSON.stringify(newUser));
+        setUser(existingUser);
+        localStorage.setItem("auth_user_id", existingUser.id);
 
-        if (role === 'instructor') {
+        if (existingUser.role === 'INSTRUCTOR' || existingUser.role === 'SUPER_ADMIN') {
             router.push('/instructor');
         } else {
             router.push('/dashboard');
@@ -68,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem("auth_user");
+        localStorage.removeItem("auth_user_id");
         router.push('/');
     };
 

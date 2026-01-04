@@ -10,24 +10,27 @@ import {
     Settings,
     LogOut,
     GraduationCap,
-    Presentation
+    Presentation,
+    ClipboardCheck
 } from "lucide-react";
 import { clsx } from "clsx";
+import { useAuth } from "@/context/AuthContext";
 
 const menuItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
     { icon: BookOpen, label: "My Courses", href: "/dashboard/courses" },
+    { icon: ClipboardCheck, label: "Assessments", href: "/dashboard/assessments" },
     { icon: Terminal, label: "Lab Sandbox", href: "/dashboard/labs" },
     { icon: GraduationCap, label: "Certifications", href: "/dashboard/certs" },
 ];
 
-const adminItems = [
-    { icon: Users, label: "Team Management", href: "/dashboard/team" },
+const accountItems = [
     { icon: Settings, label: "Settings", href: "/dashboard/settings" },
 ];
 
 export function Sidebar() {
     const pathname = usePathname();
+    const { logout } = useAuth();
 
     return (
         <aside className="w-64 h-screen bg-gray-50/50 border-r border-gray-100 flex flex-col fixed left-0 top-0">
@@ -67,11 +70,11 @@ export function Sidebar() {
                     </nav>
                 </div>
 
-                {/* Admin Menu */}
+                {/* Account Menu */}
                 <div>
-                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Workspace</p>
+                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Account</p>
                     <nav className="space-y-1">
-                        {adminItems.map((item) => {
+                        {accountItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.href;
 
@@ -120,10 +123,10 @@ export function Sidebar() {
                         <p className="text-xs text-gray-500 truncate">Student Account</p>
                     </div>
                 </Link>
-                <Link href="/login" className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-400 hover:text-red-600 transition-colors">
+                <button onClick={logout} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-400 hover:text-red-600 transition-colors">
                     <LogOut className="w-5 h-5" />
                     Sign Out
-                </Link>
+                </button>
             </div>
         </aside>
     );

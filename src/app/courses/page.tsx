@@ -38,10 +38,15 @@ export default function CoursesPage() {
                         hasLab: false
                     }));
 
-                    // Merge avoiding duplicates (by ID)
+                    // Deduplicate normalized values themselves (in case localStorage has dupes)
+                    const uniqueNormalized = normalizedValues.filter((item: any, index: number, self: any[]) =>
+                        index === self.findIndex((t) => t.id === item.id)
+                    );
+
+                    // Merge avoiding duplicates (by ID) with existing mock data
                     setAllCourses(prev => {
                         const existingIds = new Set(prev.map(p => p.id));
-                        const uniqueNew = normalizedValues.filter(n => !existingIds.has(n.id));
+                        const uniqueNew = uniqueNormalized.filter((n: any) => !existingIds.has(n.id));
                         return [...prev, ...uniqueNew];
                     });
                 }

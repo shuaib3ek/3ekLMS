@@ -20,8 +20,10 @@ export default function LoginPage() {
         // Simulate network request
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Simple role detection logic for demo
-        const role = email.includes("inst") ? "instructor" : "student";
+        // Role detection logic
+        const input = email.toLowerCase();
+        const role = (input.includes("inst") || input.includes("trainer")) ? "INSTRUCTOR" : "LEARNER";
+
         login(email, role);
     };
 

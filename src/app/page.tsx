@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, CheckCircle2, PlayCircle, X } from "lucide-react";
 
 export default function Home() {
+  const [showDemo, setShowDemo] = useState(false);
+
   return (
     <div className="min-h-screen bg-white text-gray-900 selection:bg-blue-100 selection:text-blue-900 overflow-hidden">
       {/* Background Glow Effect */}
@@ -15,18 +20,13 @@ export default function Home() {
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-            <Link href="/instructor" className="hover:text-black transition-colors">Instructor View</Link>
-            <Link href="#" className="hover:text-black transition-colors">Solutions</Link>
-            <Link href="#" className="hover:text-black transition-colors">Pricing</Link>
-            <Link href="#" className="hover:text-black transition-colors">Resources</Link>
+            <Link href="/solutions" className="hover:text-black transition-colors">Solutions</Link>
+            <Link href="/resources" className="hover:text-black transition-colors">Resources</Link>
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href="/login" className="hidden md:block text-sm font-medium text-gray-600 hover:text-black transition-colors">
+            <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-black transition-colors">
               Log in
-            </Link>
-            <Link href="/dashboard" className="px-5 py-2.5 bg-black text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-all hover:shadow-lg hover:-translate-y-0.5">
-              Student Demo
             </Link>
           </div>
         </div>
@@ -53,11 +53,17 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="#" className="w-full sm:w-auto px-8 py-4 bg-black text-white font-medium rounded-full hover:bg-gray-800 transition-all hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2">
-              Start Your Free Trial <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="#" className="w-full sm:w-auto px-8 py-4 bg-white border border-gray-200 text-gray-700 font-medium rounded-full hover:bg-gray-50 transition-all hover:border-gray-300 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setShowDemo(true)}
+              className="w-full sm:w-auto px-8 py-4 bg-black text-white font-medium rounded-full hover:bg-gray-800 transition-all hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2"
+            >
               <PlayCircle className="w-4 h-4" /> Watch Demo
+            </button>
+            <Link href="/instructor" className="w-full sm:w-auto px-8 py-4 bg-white border border-gray-200 text-gray-700 font-medium rounded-full hover:bg-gray-50 transition-all hover:border-gray-300 flex items-center justify-center gap-2">
+              Instructor View
+            </Link>
+            <Link href="/dashboard" className="w-full sm:w-auto px-8 py-4 bg-white border border-gray-200 text-gray-700 font-medium rounded-full hover:bg-gray-50 transition-all hover:border-gray-300 flex items-center justify-center gap-2">
+              Student View
             </Link>
           </div>
 
@@ -90,6 +96,27 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Demo Modal */}
+      {showDemo && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-5xl overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h3 className="font-bold text-lg">Platform Demo</h3>
+              <button onClick={() => setShowDemo(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="aspect-video bg-black relative flex items-center justify-center group">
+              <img
+                src="/demo.webp"
+                alt="Platform Demo"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

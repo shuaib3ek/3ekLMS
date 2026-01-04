@@ -66,7 +66,11 @@ export default function InstructorCoursesPage() {
                     });
 
                     if (uniqueNewCourses.length > 0) {
-                        setCourses(prev => [...prev, ...uniqueNewCourses]);
+                        setCourses(prev => {
+                            const currentIds = new Set(prev.map(c => c.id));
+                            const actuallyUnique = uniqueNewCourses.filter(c => !currentIds.has(c.id));
+                            return [...prev, ...actuallyUnique];
+                        });
                     }
                 }
             } catch (e) {

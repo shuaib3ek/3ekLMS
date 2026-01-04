@@ -68,7 +68,16 @@ export default function MyCoursesPage() {
                 thumbnail: c.thumbnail || "bg-gray-100"
             }));
 
-            const allCourses = [...initialMockCatalog, ...normalizedInstructorCourses];
+            // Deduplicate normalized instructor courses
+            const uniqueNormalized = normalizedInstructorCourses.filter((item: any, index: number, self: any[]) =>
+                index === self.findIndex((t) => t.id === item.id)
+            );
+
+            // Merge avoiding duplicates from mock
+            const mockIds = new Set(initialMockCatalog.map(m => m.id));
+            const uniqueInstructor = uniqueNormalized.filter((c: any) => !mockIds.has(c.id));
+
+            const allCourses = [...initialMockCatalog, ...uniqueInstructor];
 
             // 2. Get Enrollments
             const savedEnrollments = localStorage.getItem("student_enrollments");

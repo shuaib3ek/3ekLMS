@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import {
     LayoutDashboard,
     BookOpen,
@@ -9,7 +10,9 @@ import {
     Settings,
     LogOut,
     Users,
-    GraduationCap
+    GraduationCap,
+    Calendar,
+    ClipboardCheck
 } from "lucide-react";
 
 export default function InstructorLayout({
@@ -17,6 +20,8 @@ export default function InstructorLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const { logout } = useAuth();
+
     return (
         <div className="min-h-screen flex bg-gray-50">
             {/* Sidebar */}
@@ -29,7 +34,9 @@ export default function InstructorLayout({
 
                 <div className="flex-1 py-6 px-4 space-y-1">
                     <NavItem href="/instructor" icon={LayoutDashboard}>Dashboard</NavItem>
-                    <NavItem href="/instructor/courses" icon={BookOpen}>My Courses</NavItem>
+                    <NavItem href="/instructor/batches" icon={Calendar}>Batches</NavItem>
+                    <NavItem href="/instructor/courses" icon={BookOpen}>Programs</NavItem>
+                    <NavItem href="/instructor/assessments" icon={ClipboardCheck}>Assessments</NavItem>
                     <NavItem href="/instructor/students" icon={Users}>Students</NavItem>
                     <NavItem href="/instructor/analytics" icon={BarChart3}>Analytics</NavItem>
                     <NavItem href="/instructor/settings" icon={Settings}>Settings</NavItem>
@@ -46,9 +53,9 @@ export default function InstructorLayout({
                 </div>
 
                 <div className="p-4 border-t border-gray-100">
-                    <Link href="/login" className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-600 transition-colors w-full">
+                    <button onClick={logout} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-600 transition-colors w-full">
                         <LogOut className="w-4 h-4" /> Sign Out
-                    </Link>
+                    </button>
                 </div>
             </aside>
 

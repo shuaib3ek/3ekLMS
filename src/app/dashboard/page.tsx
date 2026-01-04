@@ -8,13 +8,19 @@ import { courses as mockCourses } from "@/lib/mockData";
 
 export default function Dashboard() {
     const { user } = useAuth();
+    const [mounted, setMounted] = useState(false);
     const firstName = user ? user.name.split(" ")[0] : "Student";
+
     const [stats, setStats] = useState({
         activeCourses: 0,
         hoursLearned: 0,
         certificates: 0
     });
     const [recentCourses, setRecentCourses] = useState<any[]>([]);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         // Load data
@@ -36,6 +42,10 @@ export default function Dashboard() {
             color: "bg-blue-100 text-blue-700"
         }));
 
+        const uniqueNormalized = normalizedInstructorCourses.filter((item: any, index: number, self: any[]) =>
+            index === self.findIndex((t) => t.id === item.id)
+        );
+
         // Mock catalog (subset used in other files)
         const catalog = [
             ...mockCourses.map(c => ({
@@ -45,7 +55,7 @@ export default function Dashboard() {
                 type: "Course",
                 color: "bg-purple-100 text-purple-700"
             })),
-            ...normalizedInstructorCourses
+            ...uniqueNormalized
         ];
 
         // Filter enrolled
@@ -60,6 +70,8 @@ export default function Dashboard() {
         setRecentCourses(myCourses.slice(0, 3));
 
     }, []);
+
+    if (!mounted) return null;
 
     return (
         <div className="space-y-10 animate-in fade-in duration-700">
