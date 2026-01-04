@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/db";
 import { Users, Building2, Layers, Activity } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AdminDashboard() {
+    const { user } = useAuth();
     const [stats, setStats] = useState({
         users: 0,
         orgs: 0,
@@ -13,14 +14,20 @@ export default function AdminDashboard() {
     });
 
     useEffect(() => {
-        db.init();
-        setStats({
-            users: db.users.getAll().length,
-            orgs: 1, // Mock
-            courses: db.programs.getAll().length,
-            batches: db.batches.getAll().length
-        });
-    }, []);
+        if (!user) return;
+        const load = async () => {
+            // Lazy load the server action
+            const { getSystemAnalytics } = await import("@/actions/lms");
+            const data = await getSystemAnalytics(user.orgId);
+            setStats({
+                users: data.totalUsers,
+                orgs: 1, // Single Tenant for now
+                courses: 0, // Pending implementation
+                batches: data.activeBatches
+            });
+        };
+        load();
+    }, [user]);
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -37,11 +44,60 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm h-64 flex items-center justify-center text-gray-400 font-medium italic">
-                    License Usage Chart (Placeholder)
+                {/* Visual Chart 1: User Activity */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col">
+                    <h3 className="text-lg font-bold text-gray-900 mb-6">User Activity (Last 7 Days)</h3>
+                    <div className="flex-1 flex items-end justify-between gap-2 h-48 px-2">
+                        {[40, 65, 30, 85, 50, 75, 90].map((h, i) => (
+                            <div key={i} className="w-full flex flex-col items-center gap-2 group cursor-pointer">
+                                <div
+                                    className="w-full bg-blue-100 rounded-t-lg relative group-hover:bg-blue-200 transition-all duration-300"
+                                    style={{ height: `${h}%` }}
+                                >
+                                    <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-xs py-1 px-2 rounded font-bold transition-opacity">
+                                        {h} users
+                                    </div>
+                                </div>
+                                <span className="text-xs text-gray-400 font-bold">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm h-64 flex items-center justify-center text-gray-400 font-medium italic">
-                    System Load (Placeholder)
+
+                {/* Visual Chart 2: Batch Distribution */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col">
+                    <h3 className="text-lg font-bold text-gray-900 mb-6">Batch Status Distribution</h3>
+                    <div className="flex-1 flex items-center justify-center gap-8">
+                        {/* CSS Donut Chart approximation or Simple Legend Bar */}
+                        <div className="space-y-4 w-full">
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-sm font-bold text-gray-700"><span>Active Batches</span> <span>65%</span></div>
+                                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-green-500 w-[65%] rounded-full"></div></div>
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-sm font-bold text-gray-700"><span>Pending Setup</span> <span>25%</span></div>
+                                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-orange-500 w-[25%] rounded-full"></div></div>
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-sm font-bold text-gray-700"><span>Completed</span> <span>10%</span></div>
+                                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-blue-500 w-[10%] rounded-full"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Recent Activity Table (Visual) */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Recent System Alerts</h3>
+                <div className="space-y-4">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <p className="text-sm text-gray-600 flex-1">New Batch <strong>Full Stack Java</strong> requires instructor assignment.</p>
+                            <span className="text-xs text-gray-400">2h ago</span>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>

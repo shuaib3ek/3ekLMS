@@ -1,48 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db, Batch, Program } from "@/lib/db";
+import { Batch } from "@prisma/client";
 import { Users, Calendar, ArrowRight, Clock } from "lucide-react";
 import Link from "next/link";
+import { getInstructorBatches } from "@/actions/lms";
+import { useAuth } from "@/context/AuthContext";
+
+type BatchDTO = Omit<Batch, 'startDate' | 'endDate' | 'createdAt'> & {
+    startDate: string; endDate: string; createdAt: string;
+    status?: string;
+};
+
+function getStatus(b: BatchDTO) {
+    const now = new Date();
+    const start = new Date(b.startDate);
+    const end = new Date(b.endDate);
+    if (now < start) return "UPCOMING";
+    if (now > end) return "COMPLETED";
+    return "ACTIVE";
+}
 
 export default function BatchesPage() {
-    const [batches, setBatches] = useState<Batch[]>([]);
-    const [programs, setPrograms] = useState<Record<string, Program>>({});
+    const { user: currentUser } = useAuth();
+    const [batches, setBatches] = useState<BatchDTO[]>([]);
 
     useEffect(() => {
-        // Init DB just in case
-        db.init();
-
-        // Load Batches
-        const allBatches = db.batches.getAll();
-
-        // Mock seed if empty for demo
-        if (allBatches.length === 0) {
-            const demoBatch: Batch = {
-                id: "batch_feb_26",
-                programId: "aws-arch-101", // Linking to existing mock ID
-                orgId: "org_default",
-                name: "Feb 2026 Cohort - Acme Corp",
-                instructorIds: ["user_admin"],
-                startDate: "2026-02-01",
-                endDate: "2026-04-01",
-                status: "UPCOMING"
-            };
-            db.batches.create(demoBatch);
-            setBatches([demoBatch]);
-        } else {
-            setBatches(allBatches);
-        }
-
-        // Load Programs for lookup
-        const progs = db.programs.getAll();
-        // Fallback to mockCourses if DB programs empty (since we haven't migrated courses to Programs yet fully)
-        // For now, let's just use a dictionary
-        const progMap: Record<string, any> = {};
-        // We can look up titles from localStorage or generic content
-        setPrograms(progMap);
-
-    }, []);
+        const load = async () => {
+            if (currentUser?.id) {
+                const data = await getInstructorBatches(currentUser.id);
+                // Compute status on client
+                const withStatus = data.map(b => ({
+                    ...b,
+                    status: getStatus(b as any)
+                }));
+                setBatches(withStatus);
+            }
+        };
+        load();
+    }, [currentUser?.id]);
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -61,7 +57,7 @@ export default function BatchesPage() {
                     <div key={batch.id} className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-all group">
                         <div className="flex items-start justify-between mb-4">
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${batch.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                                    batch.status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                                batch.status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
                                 }`}>
                                 {batch.status}
                             </span>

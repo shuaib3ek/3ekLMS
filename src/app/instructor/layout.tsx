@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
+import { clsx } from "clsx";
 import {
     LayoutDashboard,
     BookOpen,
@@ -12,7 +14,11 @@ import {
     Users,
     GraduationCap,
     Calendar,
-    ClipboardCheck
+    ClipboardCheck,
+    ChevronLeft,
+    ChevronRight,
+    Search,
+    Bell
 } from "lucide-react";
 
 export default function InstructorLayout({
@@ -21,49 +27,80 @@ export default function InstructorLayout({
     children: React.ReactNode;
 }) {
     const { logout } = useAuth();
+    const [collapsed, setCollapsed] = useState(false);
 
     return (
         <div className="min-h-screen flex bg-gray-50">
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-gray-200 fixed inset-y-0 z-50 hidden md:flex flex-col">
-                <div className="h-16 flex items-center px-6 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                        <img src="/logo.png" alt="3ekLMS" className="h-8 w-auto" />
-                    </div>
+            <aside
+                className={clsx(
+                    "bg-white border-r border-gray-200 fixed inset-y-0 z-50 flex flex-col transition-all duration-300",
+                    collapsed ? "w-20" : "w-64"
+                )}
+            >
+                <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+                    {!collapsed && (
+                        <div className="flex items-center gap-2">
+                            <img src="/logo.png" alt="3ekLMS" className="h-8 w-auto" />
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors ml-auto"
+                    >
+                        {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                    </button>
                 </div>
 
-                <div className="flex-1 py-6 px-4 space-y-1">
-                    <NavItem href="/instructor" icon={LayoutDashboard}>Dashboard</NavItem>
-                    <NavItem href="/instructor/batches" icon={Calendar}>Batches</NavItem>
-                    <NavItem href="/instructor/courses" icon={BookOpen}>Programs</NavItem>
-                    <NavItem href="/instructor/assessments" icon={ClipboardCheck}>Assessments</NavItem>
-                    <NavItem href="/instructor/students" icon={Users}>Students</NavItem>
-                    <NavItem href="/instructor/analytics" icon={BarChart3}>Analytics</NavItem>
-                    <NavItem href="/instructor/settings" icon={Settings}>Settings</NavItem>
+                <div className="flex-1 py-6 px-3 space-y-1 overflow-y-auto overflow-x-hidden">
+                    <NavItem href="/instructor" icon={LayoutDashboard} collapsed={collapsed}>Dashboard</NavItem>
+                    <NavItem href="/instructor/batches" icon={Calendar} collapsed={collapsed}>Batches</NavItem>
+                    <NavItem href="/instructor/courses" icon={BookOpen} collapsed={collapsed}>Programs</NavItem>
+                    <NavItem href="/instructor/assessments" icon={ClipboardCheck} collapsed={collapsed}>Assessments</NavItem>
+                    <NavItem href="/instructor/students" icon={Users} collapsed={collapsed}>Students</NavItem>
+                    <NavItem href="/instructor/analytics" icon={BarChart3} collapsed={collapsed}>Analytics</NavItem>
+                    <NavItem href="/instructor/settings" icon={Settings} collapsed={collapsed}>Settings</NavItem>
 
                     <div className="pt-4 mt-4 border-t border-gray-100">
                         <Link
                             href="/dashboard"
-                            className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all duration-200"
+                            className={clsx(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all duration-200",
+                                collapsed && "justify-center"
+                            )}
+                            title={collapsed ? "Student View" : ""}
                         >
-                            <GraduationCap className="w-4 h-4" />
-                            Student View
+                            <GraduationCap className="w-5 h-5 min-w-[20px]" />
+                            {!collapsed && "Student View"}
                         </Link>
                     </div>
                 </div>
 
-                <div className="p-4 border-t border-gray-100">
-                    <button onClick={logout} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-600 transition-colors w-full">
-                        <LogOut className="w-4 h-4" /> Sign Out
+                <div className="p-3 border-t border-gray-100">
+                    <button
+                        onClick={logout}
+                        className={clsx(
+                            "flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all w-full",
+                            collapsed && "justify-center"
+                        )}
+                        title={collapsed ? "Sign Out" : ""}
+                    >
+                        <LogOut className="w-5 h-5 min-w-[20px]" />
+                        {!collapsed && "Sign Out"}
                     </button>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 md:ml-64 min-h-screen">
+            <main
+                className={clsx(
+                    "flex-1 min-h-screen transition-all duration-300",
+                    collapsed ? "ml-20" : "ml-64"
+                )}
+            >
                 {/* Instructor Header */}
                 <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-40">
-                    <div className="text-sm font-medium text-gray-500">
+                    <div className="text-sm font-medium text-gray-500 hidden sm:block">
                         San Francisco, CA • 9:41 AM
                     </div>
 
@@ -88,20 +125,24 @@ export default function InstructorLayout({
     );
 }
 
-function NavItem({ href, icon: Icon, children }: { href: string; icon: any; children: React.ReactNode }) {
+function NavItem({ href, icon: Icon, children, collapsed }: { href: string; icon: any; children: React.ReactNode, collapsed: boolean }) {
     const pathname = usePathname();
     const active = pathname === href;
 
     return (
         <Link
             href={href}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${active
-                ? "bg-black text-white shadow-md"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                }`}
+            title={collapsed ? children?.toString() : ""}
+            className={clsx(
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                active
+                    ? "bg-black text-white shadow-md shadow-gray-200"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-900",
+                collapsed && "justify-center"
+            )}
         >
-            <Icon className="w-4 h-4" />
-            {children}
+            <Icon className="w-5 h-5 min-w-[20px]" />
+            {!collapsed && <span>{children}</span>}
         </Link>
     );
 }

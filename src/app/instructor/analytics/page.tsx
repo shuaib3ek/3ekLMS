@@ -6,11 +6,29 @@ import {
     TrendingUp,
     Clock,
     ArrowUpRight,
-    ArrowDownRight,
-    DollarSign
+    ArrowDownRight
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { getInstructorAnalyticsAction, AnalyticsSummary } from "@/actions/analytics";
 
 export default function AnalyticsPage() {
+    const { user } = useAuth();
+    const [stats, setStats] = useState<AnalyticsSummary | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) return;
+        const load = async () => {
+            const data = await getInstructorAnalyticsAction(user.id);
+            setStats(data);
+            setLoading(false);
+        };
+        load();
+    }, [user]);
+
+    if (loading) return <div className="p-8">Loading Analytics...</div>;
+
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
             <div>
@@ -21,10 +39,10 @@ export default function AnalyticsPage() {
             {/* Top Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: "Total Students", value: "2,543", change: "+12.5%", trend: "up", icon: Users, color: "bg-blue-50 text-blue-600" },
-                    { label: "Active Learners", value: "1,120", change: "+5.2%", trend: "up", icon: TrendingUp, color: "bg-green-50 text-green-600" },
-                    { label: "Course Completions", value: "856", change: "+14.2%", trend: "up", icon: BookOpen, color: "bg-purple-50 text-purple-600" },
-                    { label: "Avg. Watch Time", value: "48m", change: "-2.1%", trend: "down", icon: Clock, color: "bg-orange-50 text-orange-600" },
+                    { label: "Total Students", value: stats?.totalStudents || 0, change: "Live", trend: "up", icon: Users, color: "bg-blue-50 text-blue-600" },
+                    { label: "Active Batches", value: stats?.activeBatches || 0, change: "Live", trend: "up", icon: TrendingUp, color: "bg-green-50 text-green-600" },
+                    { label: "Quiz Passes", value: stats?.quizCompletions || 0, change: "All Time", trend: "up", icon: BookOpen, color: "bg-purple-50 text-purple-600" },
+                    { label: "Avg. Watch Time", value: "~45m", change: "Est.", trend: "down", icon: Clock, color: "bg-orange-50 text-orange-600" },
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
@@ -49,16 +67,14 @@ export default function AnalyticsPage() {
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h2 className="text-xl font-bold text-gray-900">Engagement Overview</h2>
-                            <p className="text-sm text-gray-500">Daily active students over the last 30 days</p>
+                            <p className="text-sm text-gray-500">Daily active students over the last 30 days (Simulated)</p>
                         </div>
                         <select className="bg-gray-50 border border-gray-200 text-sm font-medium rounded-lg px-3 py-2 outline-none">
                             <option>Last 30 Days</option>
-                            <option>Last 7 Days</option>
-                            <option>This Year</option>
                         </select>
                     </div>
 
-                    {/* CSS Bar Chart Simulation */}
+                    {/* CSS Bar Chart Simulation - Static for now */}
                     <div className="h-64 flex items-end justify-between gap-2">
                         {[40, 65, 45, 80, 55, 70, 40, 50, 60, 75, 85, 90, 60, 50, 70, 80, 95, 100, 80, 70, 60, 50, 65, 75, 80, 60, 50, 70, 85, 90].map((h, i) => (
                             <div key={i} className="w-full bg-blue-100 rounded-t-sm hover:bg-blue-600 transition-colors group relative cursor-pointer" style={{ height: `${h}%` }}>
@@ -68,38 +84,27 @@ export default function AnalyticsPage() {
                             </div>
                         ))}
                     </div>
-                    <div className="border-t border-gray-100 mt-4 pt-4 flex justify-between text-xs text-gray-400 font-medium uppercase tracking-wider">
-                        <span>1st</span>
-                        <span>8th</span>
-                        <span>15th</span>
-                        <span>22nd</span>
-                        <span>29th</span>
-                    </div>
                 </div>
 
-                {/* Top Performing Courses */}
+                {/* Top Performing Batches */}
                 <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">Top Performing</h2>
+                    <h2 className="text-xl font-bold text-gray-900 mb-6">Top Batches</h2>
                     <div className="space-y-6">
-                        {[
-                            { name: "Advanced React Patterns", students: 1204, revenue: "$24k", trend: "+12%" },
-                            { name: "AWS Solutions Architect", students: 856, revenue: "$18k", trend: "+8%" },
-                            { name: "Kubernetes Mastery", students: 645, revenue: "$15k", trend: "+24%" },
-                            { name: "Intro to Go", students: 432, revenue: "$9k", trend: "+4%" },
-                        ].map((course, i) => (
+                        {(stats?.topBatches || []).length === 0 && <p className="text-gray-500">No active batches found.</p>}
+
+                        {(stats?.topBatches || []).map((batch, i) => (
                             <div key={i} className="flex items-center justify-between group cursor-pointer">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-lg bg-gray-100 text-gray-500 font-bold flex items-center justify-center">
                                         {i + 1}
                                     </div>
                                     <div>
-                                        <h4 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{course.name}</h4>
-                                        <p className="text-xs text-gray-500">{course.students} students</p>
+                                        <h4 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{batch.name}</h4>
+                                        <p className="text-xs text-gray-500">{batch.studentCount} students</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-sm font-bold text-gray-900">{course.revenue}</p>
-                                    <p className="text-xs text-green-600 font-medium">{course.trend}</p>
+                                    <p className="text-sm font-bold text-gray-900">Active</p>
                                 </div>
                             </div>
                         ))}

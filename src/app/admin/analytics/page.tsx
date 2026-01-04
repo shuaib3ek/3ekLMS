@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db, AuditLog } from "@/lib/db";
 import {
     Activity,
     AlertTriangle,
@@ -12,28 +11,14 @@ import {
 } from "lucide-react";
 
 export default function AdminAnalyticsPage() {
-    const [logs, setLogs] = useState<AuditLog[]>([]);
+    const [logs, setLogs] = useState<any[]>([
+        { id: '1', action: 'USER_LOGIN', userId: 'user_admin', details: 'Successful login', severity: 'INFO', timestamp: new Date().toISOString() },
+        { id: '2', action: 'BATCH_CREATED', userId: 'user_admin', details: 'Created batch "Feb 2026 Cohort"', severity: 'INFO', timestamp: new Date(Date.now() - 3600000).toISOString() },
+        { id: '3', action: 'FAILED_LOGIN', userId: 'unknown', details: 'Failed login attempt', severity: 'WARNING', timestamp: new Date(Date.now() - 86400000).toISOString() },
+    ]);
 
-    useEffect(() => {
-        db.init();
-
-        // Seed logs if empty
-        const allLogs = db.logs.getAll();
-        if (allLogs.length === 0) {
-            // Seed some data
-            const seed: AuditLog[] = [
-                { id: '1', action: 'USER_LOGIN', userId: 'user_admin', details: 'Successful login from 192.168.1.1', severity: 'INFO', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-                { id: '2', action: 'BATCH_CREATED', userId: 'user_admin', details: 'Created batch "Feb 2026 Cohort"', severity: 'INFO', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
-                { id: '3', action: 'FAILED_LOGIN', userId: 'unknown', details: 'Failed login attempt for admin@3ek.in', severity: 'WARNING', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-                { id: '4', action: 'LAB_PROVISION', userId: 's1', details: 'Provisioned Node.js Environment', severity: 'INFO', timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
-                { id: '5', action: 'ORG_SETTINGS_UPDATE', userId: 'user_admin', details: 'Updated logo for Organization 1', severity: 'INFO', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() },
-            ];
-            seed.forEach(l => db.logs.log(l.action, l.userId, l.details, l.severity));
-            setLogs(seed);
-        } else {
-            setLogs(allLogs);
-        }
-    }, []);
+    // Future: Implement real audit logging
+    useEffect(() => { }, []);
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">

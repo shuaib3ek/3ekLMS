@@ -65,6 +65,9 @@ export default function Home() {
             <Link href="/dashboard" className="w-full sm:w-auto px-8 py-4 bg-white border border-gray-200 text-gray-700 font-medium rounded-full hover:bg-gray-50 transition-all hover:border-gray-300 flex items-center justify-center gap-2">
               Student View
             </Link>
+            <Link href="/admin" className="w-full sm:w-auto px-8 py-4 bg-white border border-gray-200 text-gray-700 font-medium rounded-full hover:bg-gray-50 transition-all hover:border-gray-300 flex items-center justify-center gap-2">
+              Admin View
+            </Link>
           </div>
 
           {/* Feature Grid Mockup */}

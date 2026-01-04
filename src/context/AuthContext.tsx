@@ -2,11 +2,15 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { db, User, Role } from "@/lib/db";
+import { User, Role } from "@prisma/client"; // Use Prisma types
+import { loginAction, getUserAction } from "@/actions/auth";
+
+// Extended User type for frontend (if we need extra fields like avatar mock)
+type AuthUser = Omit<User, 'createdAt'> & { createdAt: string; avatar?: string };
 
 interface AuthContextType {
-    user: User | null;
-    login: (email: string, role?: Role) => void;
+    user: AuthUser | null;
+    login: (email: string, role?: Role) => Promise<void>;
     logout: () => void;
     isLoading: boolean;
 }
@@ -14,54 +18,55 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
-        // Initialize DB (seed data if needed)
-        db.init();
-
-        // Check for persisted user session
-        const storedUserId = localStorage.getItem("auth_user_id");
-        if (storedUserId) {
-            const foundUser = db.users.getById(storedUserId);
-            if (foundUser) setUser(foundUser);
-        }
-        setIsLoading(false);
+        const initAuth = async () => {
+            const storedUserId = localStorage.getItem("auth_user_id");
+            if (storedUserId) {
+                const foundUser = await getUserAction(storedUserId);
+                if (foundUser) {
+                    // Add mock avatar for backward compat visual
+                    const avatar = `https://ui-avatars.com/api/?name=${foundUser.email}&background=000&color=fff`;
+                    setUser({ ...foundUser, avatar });
+                }
+            }
+            setIsLoading(false);
+        };
+        initAuth();
     }, []);
 
-    const login = (email: string, role: Role = 'LEARNER') => {
-        let existingUser = db.users.getByEmail(email);
+    const login = async (email: string, role: Role = 'LEARNER') => {
+        setIsLoading(true);
+        const result = await loginAction(email, role);
 
-        if (!existingUser) {
-            // Auto-signup for demo
-            const newUser: User = {
-                id: crypto.randomUUID(),
-                email,
-                name: email.split('@')[0],
-                role: role,
-                orgId: 'org_default',
-                createdAt: new Date().toISOString(),
-                avatar: `https://ui-avatars.com/api/?name=${email}&background=000&color=fff`
-            };
-            db.users.create(newUser);
-            existingUser = newUser;
-        }
+        if (result.success && result.user) {
+            const avatar = `https://ui-avatars.com/api/?name=${result.user.email}&background=000&color=fff`;
+            const authUser: AuthUser = { ...result.user, avatar };
 
-        setUser(existingUser);
-        localStorage.setItem("auth_user_id", existingUser.id);
+            setUser(authUser);
+            localStorage.setItem("auth_user_id", authUser.id);
 
-        if (existingUser.role === 'INSTRUCTOR' || existingUser.role === 'SUPER_ADMIN') {
-            router.push('/instructor');
+            if (authUser.role === 'SUPER_ADMIN' || authUser.role === 'ORG_ADMIN') {
+                router.push('/admin');
+            } else if (authUser.role === 'INSTRUCTOR') {
+                router.push('/instructor');
+            } else {
+                router.push('/dashboard');
+            }
         } else {
-            router.push('/dashboard');
+            alert("Login Failed");
         }
+        setIsLoading(false);
     };
 
-    const logout = () => {
+    const logout = async () => {
+        const { logoutAction } = await import("@/actions/auth");
+        await logoutAction(); // Clear server cookie
         setUser(null);
-        localStorage.removeItem("auth_user_id");
+        localStorage.removeItem("auth_user_id"); // Clear client cache
         router.push('/');
     };
 

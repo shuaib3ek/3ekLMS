@@ -1,0 +1,279 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Core Identity (Multi-Tenant) ---
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  domain      String?  @unique // For detection
+  users       User[]
+  programs    Program[]
+  batches     Batch[]
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  password    String   // Hashed
+  role        Role     @default(LEARNER)
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  
+  // Relationships
+  enrollments Enrollment[]
+  attendance  Attendance[]
+  labSessions LabSession[]
+  instructedBatches Batch[] @relation("BatchInstructors")
+  ownedBatches      Batch[] @relation("BatchOwner")
+  quizSubmissions   QuizSubmission[]
+  
+  createdAt   DateTime @default(now())
+}
+
+enum Role {
+  SUPER_ADMIN
+  ORG_ADMIN
+  INSTRUCTOR
+  LEARNER
+}
+
+// --- Module 1: ILT Data Model (The "Classroom" Engine) ---
+
+// Static Content Layer
+model Program {
+  id          String   @id @default(uuid())
+  title       String
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  
+  // A JSON blob is sufficient for MVP curriculum structure 
+  // vs creating 5 tables for Modules/Topics/Assets
+  curriculum  Json     
+  // Example: [{ module: "React", topics: [{ id: "t1", title: "Hooks" }] }]
+  
+  batches     Batch[]
+  createdAt   DateTime @default(now())
+}
+
+// Dynamic Delivery Layer
+enum TrainingType {
+  INSTRUCTOR_LED
+  SELF_PACED
+  HYBRID
+}
+
+enum BatchStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+model Batch {
+  id          String    @id @default(uuid())
+  name        String    // e.g. "Feb 2026 Cohort"
+  programId   String
+  program     Program   @relation(fields: [programId], references: [id])
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  
+  // New Fields
+  type              TrainingType @default(INSTRUCTOR_LED) // Only relevant if trainingEnabled=true
+  status            BatchStatus  @default(PLANNED)
+  
+  // Feature Flags (Checkbox Driven)
+  trainingEnabled   Boolean      @default(true)
+  labEnabled        Boolean      @default(false)
+  assessmentEnabled Boolean      @default(false)
+  
+  // Feature Configs
+  schedule          String?      // Readable summary (e.g. "Mon-Fri 10-12")
+  trainingConfig    Json?        // Structured: { days: [], slot: { start, end } }
+  labConfig         Json?        // Structured: { mode, ... }
+  assessmentConfig  Json?        // Structured: { mode, window, ... }
+  
+  instructors User[]    @relation("BatchInstructors")
+  ownerId     String?
+  owner       User?     @relation("BatchOwner", fields: [ownerId], references: [id]) 
+  students    Enrollment[]
+  sessions    Session[]
+  quizzes     Quiz[]
+  
+  createdAt   DateTime @default(now())
+}
+
+model Session {
+  id          String    @id @default(uuid())
+  batchId     String
+  batch       Batch     @relation(fields: [batchId], references: [id])
+  
+  startTime   DateTime
+  endTime     DateTime
+  
+  // Link to the static curriculum topic
+  topicId     String    
+  title       String    // Snapshot of topic title
+  meetingLink String?   // Zoom/Meet URL
+
+  attendance  Attendance[]
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String
+  batchId   String
+  user      User     @relation(fields: [userId], references: [id])
+  batch     Batch    @relation(fields: [batchId], references: [id])
+  
+  enrolledAt DateTime @default(now())
+  status    EnrollmentStatus @default(ACTIVE)
+  
+  @@unique([userId, batchId])
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  DROPPED
+  COMPLETED
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  status    AttendanceStatus // PRESENT, ABSENT, LATE, EXCUSED
+  
+  @@unique([sessionId, userId])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+// --- Module 2: Lab Lifecycle (Glocumal Integration) ---
+
+model LabSession {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  labType     String      // e.g., "nodejs-18"
+  
+  status      LabStatus   @default(PROVISIONING)
+  instanceUrl String?     // e.g. "https://lab-abc.glocumal.com"
+  
+  startedAt   DateTime    @default(now())
+  expiresAt   DateTime    // Key for auto-reaping
+  terminatedAt DateTime?
+}
+
+enum LabStatus {
+  PROVISIONING
+  RUNNING
+  STOPPED
+  TERMINATED
+  FAILED
+}
+
+// --- Module 3: Assessments ---
+
+model Quiz {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  batchId     String
+  batch       Batch    @relation(fields: [batchId], references: [id])
+  
+  questions   Question[]
+  submissions QuizSubmission[]
+  
+  createdAt   DateTime @default(now())
+}
+
+model Question {
+  id        String   @id @default(uuid())
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+  text      String
+  type      QuestionType @default(MULTIPLE_CHOICE)
+  points    Int      @default(1)
+  
+  options   QuestionOption[]
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  CODE_SNIPPET
+}
+
+model QuestionOption {
+  id         String   @id @default(uuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+  text       String
+  isCorrect  Boolean  @default(false)
+}
+
+model QuizSubmission {
+  id        String   @id @default(uuid())
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  score     Int
+  passed    Boolean
+  
+  submittedAt DateTime @default(now())
+}
+
+// --- Module 3: Assessment Engine ---
+
+model Assessment {
+  id          String   @id @default(uuid())
+  title       String
+  orgId       String
+  questions   Json     // MVP: Array of questions
+  passingScore Int
+  durationMinutes Int
+  
+  attempts    AssessmentAttempt[]
+  createdAt   DateTime @default(now())
+}
+
+model AssessmentAttempt {
+  id            String   @id @default(uuid())
+  userId        String
+  assessmentId  String
+  assessment    Assessment @relation(fields: [assessmentId], references: [id])
+  
+  score         Int?
+  status        AssessmentStatus @default(IN_PROGRESS)
+  answers       Json?    // Stored JSON of answers
+  
+  startedAt     DateTime @default(now())
+  completedAt   DateTime?
+}
+
+enum AssessmentStatus {
+  IN_PROGRESS
+  COMPLETED
+}
