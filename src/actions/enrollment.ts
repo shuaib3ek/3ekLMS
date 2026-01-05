@@ -68,7 +68,7 @@ export async function bulkEnrollStudentsAction(
             for (const row of data) {
                 // Upsert User
                 const user = await tx.user.upsert({
-                    where: { email_orgId: { email: row.email, orgId } },
+                    where: { email: row.email },
                     update: {
                         name: row.name // Update name if provided? Optional decision. Let's say yes for fix.
                     },

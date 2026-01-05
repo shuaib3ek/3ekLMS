@@ -7,7 +7,7 @@ import Link from "next/link";
 import { getInstructorBatches } from "@/actions/lms";
 import { useAuth } from "@/context/AuthContext";
 
-type BatchDTO = Omit<Batch, 'startDate' | 'endDate' | 'createdAt'> & {
+type BatchDTO = Omit<Batch, 'startDate' | 'endDate' | 'createdAt' | 'status'> & {
     startDate: string; endDate: string; createdAt: string;
     status?: string;
 };

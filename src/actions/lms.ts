@@ -107,13 +107,102 @@ export async function deleteUserAction(userId: string) {
 }
 
 export async function getSystemAnalytics(orgId: string) {
-    const userCount = await prisma.user.count({ where: { orgId } });
-    const batchCount = await prisma.batch.count({ where: { program: { orgId } } });
+    const session = await verifySession();
+    const isSuperAdmin = session?.role === 'SUPER_ADMIN';
+
+    // Scope: If Super Admin, view ALL. Else, view strict Org.
+    const userScope = isSuperAdmin ? {} : { orgId };
+    const programScope = isSuperAdmin ? {} : { program: { orgId } };
+    const enrollmentScope = isSuperAdmin ? {} : { batch: { program: { orgId } } };
+
+    const userCount = await prisma.user.count({ where: userScope });
+
+    // Batch Distribution
+    const batches = await prisma.batch.findMany({
+        where: programScope,
+        select: { status: true }
+    });
+
+    const totalBatches = batches.length;
+    const active = batches.filter(b => b.status === 'ACTIVE').length;
+    const planned = batches.filter(b => b.status === 'PLANNED').length;
+    const completed = batches.filter(b => b.status === 'COMPLETED').length;
+
+    // Activity (Last 7 Days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentUsers = await prisma.user.findMany({
+        where: {
+            ...userScope,
+            createdAt: { gte: sevenDaysAgo }
+        },
+        select: { createdAt: true }
+    });
+
+    const activityData = Array(7).fill(0);
+    recentUsers.forEach(u => {
+        const dayDiff = Math.floor((new Date().getTime() - u.createdAt.getTime()) / (1000 * 3600 * 24));
+        if (dayDiff >= 0 && dayDiff < 7) {
+            activityData[6 - dayDiff]++;
+        }
+    });
+
+    // System Alerts Generation
+    const alerts: { type: string; message: string; time: string; level: 'critical' | 'warning' | 'info' }[] = [];
+
+    // Alert 1: Batches needing instructors
+    const batchesWithInstructors = await prisma.batch.findMany({
+        where: programScope,
+        include: { instructors: true }
+    });
+
+    batchesWithInstructors.forEach(b => {
+        const isLive = ['PLANNED', 'ACTIVE', 'UPCOMING'].includes(b.status);
+        if (isLive && b.instructors.length === 0) {
+            alerts.push({
+                type: 'BATCH_NEEDS_ATTENTION',
+                message: `New Batch "${b.name}" requires an instructor assignment.`,
+                time: b.createdAt.toISOString(),
+                level: 'critical'
+            });
+        }
+    });
+
+    // Alert 2: Recent Enrollments
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+    const recentEnrollments = await prisma.enrollment.count({
+        where: {
+            enrolledAt: { gte: oneDayAgo },
+            ...enrollmentScope
+        }
+    });
+
+    if (recentEnrollments > 0) {
+        alerts.push({
+            type: 'ENROLLMENT_SPIKE',
+            message: `${recentEnrollments} new student enrollments in the last 24 hours.`,
+            time: new Date().toISOString(),
+            level: 'info'
+        });
+    }
+
+    const finalAlerts = alerts.slice(0, 5);
 
     return {
         totalUsers: userCount,
-        activeBatches: batchCount,
-        avgScore: 0
+        activeBatches: active,
+        avgScore: 0,
+        batchDistribution: {
+            active,
+            planned,
+            completed,
+            total: totalBatches
+        },
+        userActivity: activityData,
+        systemAlerts: finalAlerts
     };
 }
 

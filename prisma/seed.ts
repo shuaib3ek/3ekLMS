@@ -20,7 +20,7 @@ async function main() {
     // 2. Create Super Admin
     const adminEmail = 'admin@3ek.in';
     const admin = await prisma.user.upsert({
-        where: { email_orgId: { email: adminEmail, orgId: org.id } },
+        where: { email: adminEmail },
         update: {},
         create: {
             email: adminEmail,
@@ -35,7 +35,7 @@ async function main() {
     // 3. Create Learner
     const learnerEmail = 'student@3ek.in';
     const learner = await prisma.user.upsert({
-        where: { email_orgId: { email: learnerEmail, orgId: org.id } },
+        where: { email: learnerEmail },
         update: {},
         create: {
             email: learnerEmail,
@@ -75,6 +75,7 @@ async function main() {
         data: {
             name: 'Feb 2026 Cohort',
             programId: program.id,
+            orgId: org.id,
             startDate: new Date('2026-02-01'),
             endDate: new Date('2026-05-30'),
             instructors: {

@@ -17,7 +17,7 @@ import {
 
 type BatchDetails = Batch & {
     program: Program;
-    sessions: (Session & { startTime: string, endTime: string })[]; // Override Date with string from JSON
+    sessions: (Session & { startTime: string; endTime: string; hasLab?: boolean })[]; // Override Date with string from JSON
     students: any[];
 }
 

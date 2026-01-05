@@ -116,4 +116,27 @@ export const courses: Course[] = [
             { title: "Prompt Engineering", items: ["Zero-shot vs Few-shot", "Chain of thought", "Lab: Building a chatbot"] },
         ]
     },
+    {
+        id: "python-mastery",
+        title: "Python for Everyone",
+        description: "Learn Python from scratch. Covers variables, loops, functions, and object-oriented programming.",
+        category: "Development",
+        level: "Beginner",
+        duration: "10h 00m",
+        rating: 4.8,
+        students: 5000,
+        image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?q=80&w=2832&auto=format&fit=crop",
+        lessons: 40,
+        hasLab: true,
+        price: "$0 (Enterprise)",
+        instructor: {
+            name: "Guido van Rossum (AI)",
+            role: "Python Creator",
+            avatar: "",
+        },
+        curriculum: [
+            { title: "Basics", items: ["Variables & Types", "Control Flow", "Functions"] },
+            { title: "OOP", items: ["Classes", "Inheritance", "Polymorphism"] },
+        ]
+    },
 ];
